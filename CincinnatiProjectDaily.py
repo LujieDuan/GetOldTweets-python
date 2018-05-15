@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys, csv, codecs
-
+import DuoLogger
 import emailHandler
 from datetime import date, timedelta, datetime
 import time
@@ -22,8 +22,7 @@ def main(from_date, until_date):
         tweetCriteria = got.manager.TweetCriteria()
         outputFileName = "cincinnati_tweets_%s_%s.csv" % (from_date, until_date)
         logFileName = "cincinnati_tweets_%s_%s.output.txt" % (from_date, until_date)
-        import sys
-        sys.stdout = open(logFileName, 'w')
+        sys.stdout = DuoLogger.Logger(logFileName)
 
         tweetCriteria.maxTweets = int(100000000)
         tweetCriteria.near = "Cincinnati"
@@ -45,20 +44,24 @@ def main(from_date, until_date):
                     [t.username, t.date.strftime("%Y-%m-%d %H:%M"), t.retweets, t.favorites, t.text, t.geo, t.mentions,
                      t.hashtags, t.id, t.permalink])
             csvfile.flush()
+            sys.stdout.flush()
             print('More %d saved on file...\n' % len(tweets))
 
         got.manager.TweetManager.getTweets(tweetCriteria, receiveBuffer)
 
+        ret = 0
+
     except:
         print('Failed. Retrying...')
-        return 1
+        ret = 1
     finally:
         csvfile.close()
         print('Done. Output file generated "%s".' % outputFileName)
         sys.stdout.flush()
         emailHandler.send_email(outputFileName, outputFileName, outputFileName)
         emailHandler.send_email(logFileName, logFileName, logFileName)
-        return 0
+
+    return ret
 
 
 if __name__ == '__main__':
