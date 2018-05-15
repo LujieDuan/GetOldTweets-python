@@ -93,6 +93,9 @@ class TweetManager:
 		urlGetData = ''
 		if hasattr(tweetCriteria, 'username'):
 			urlGetData += ' from:' + tweetCriteria.username
+
+		if hasattr(tweetCriteria, 'near'):
+			urlGetData += "&near:" + tweetCriteria.near + " within:" + tweetCriteria.within
 			
 		if hasattr(tweetCriteria, 'since'):
 			urlGetData += ' since:' + tweetCriteria.since
@@ -102,9 +105,6 @@ class TweetManager:
 			
 		if hasattr(tweetCriteria, 'querySearch'):
 			urlGetData += ' ' + tweetCriteria.querySearch
-
-		if hasattr(tweetCriteria, 'near'):
-			urlGetData += "&near:" + tweetCriteria.near + " within:" + tweetCriteria.within
 			
 		if hasattr(tweetCriteria, 'lang'):
 			urlLang = 'lang=' + tweetCriteria.lang + '&'
@@ -129,16 +129,24 @@ class TweetManager:
 			opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookieJar))
 		opener.addheaders = headers
 
-		try:
-			response = opener.open(url)
-			jsonResponse = response.read()
-		except:
+
+		for n in range(10):
+			try:
+				response = opener.open(url)
+				jsonResponse = response.read()
+			except:
+				print("Retrying: %s" % url)
+			else:
+				break
+		else:
 			#print("Twitter weird response. Try to see on browser: ", url)
 			print("Twitter weird response. Try to see on browser: https://twitter.com/search?q=%s&src=typd" % urllib.parse.quote(urlGetData))
 			print("Unexpected error:", sys.exc_info()[0])
-			sys.exit()
-			return
-		
+			raise Exception("Error response. ")
+			# sys.exit()
+			# return
+
+
 		dataJson = json.loads(jsonResponse.decode())
 		
 		return dataJson		
